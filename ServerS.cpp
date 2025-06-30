@@ -38,6 +38,8 @@ void clietnHandler(int index)
 				closesocket(Connections[index]);
 				Connections[index] = INVALID_SOCKET;
 				std::cout << "Client " << index << "Disconect\n";
+				delete[] name;
+				delete[] msg;
 			}
 			mtx.unlock();
 			return;

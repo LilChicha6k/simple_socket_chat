@@ -2,26 +2,46 @@
 #include <WinSock2.h>
 #include <thread>
 #include <string>
+#include <mutex>
 #pragma comment (lib, "ws2_32")
 #pragma warning (disable: 4996)
 
 SOCKET s_connect;
+std::mutex mtx{};
 
 void catchmsg()
 {
 	int msg_size{};
 	int name_size{};
+	int bytes_received{};
 	while (true)
 	{
-		recv(s_connect, (char*)&name_size, sizeof(int), NULL);
+		bytes_received = recv(s_connect, (char*)&name_size, sizeof(int), NULL);
+
+		if (bytes_received <= 0)
+		{
+			mtx.lock();
+			if (s_connect != INVALID_SOCKET)
+			{
+				closesocket(s_connect);
+				s_connect = INVALID_SOCKET;
+				std::cout << "Server Disconect";
+			}
+			mtx.unlock();
+			return;
+		}
 		char* name = new char[name_size + 1];
 		name[name_size] = '\0';
+
 		recv(s_connect, name, name_size, NULL);
 		std::cout << '\n' << name << " Send:\n";
+
 		recv(s_connect, (char*)&msg_size, sizeof(int), NULL);
 		char* msg = new char[msg_size + 1];
 		msg[msg_size] = '\0';
+
 		recv(s_connect, msg, msg_size, NULL);
+
 		std::cout << msg << '\n';
 		delete[] msg;
 		delete[] name;
